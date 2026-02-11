@@ -1,0 +1,91 @@
+{
+  "bot": {
+    "id": "molti",
+    "name": "Молти",
+    "version": "4.0.0",
+    "role": "primary-agent",
+    "status": "online",
+    "emoji": "🦞"
+  },
+  "env": {
+    "source": "../.env",
+    "required": [
+      "KEEPASSXC_PASSWORD",
+      "N8N_HOST",
+      "N8N_PORT",
+      "N8N_PROTOCOL"
+    ]
+  },
+  "keepassxc": {
+    "enabled": true,
+    "password_env": "KEEPASSXC_PASSWORD",
+    "credential_groups": [
+      {
+        "group": "API Keys",
+        "entries": ["Airtop-PAID", "N8N", "DuoPlus", "OpenAI", "Anthropic"]
+      },
+      {
+        "group": "Tokens",
+        "entries": ["GitHub-PAT", "Netlify-Token", "Vercel-Token"]
+      },
+      {
+        "group": "SSH Keys",
+        "entries": ["VPS-Root", "GitHub-Deploy", "Backup-Server"]
+      },
+      {
+        "group": "Supabase",
+        "entries": ["PostgreSQL-DB", "API-Anon-Key", "API-Service-Key"]
+      },
+      {
+        "group": "Emails",
+        "entries": ["Primary-Gmail", "Work-Email", "Notifications"]
+      }
+    ]
+  },
+  "resources": {
+    "mcp_servers": [
+      { "name": "n8n", "port": 5678, "purpose": "workflow orchestration" },
+      { "name": "supabase", "port": 54321, "purpose": "database" },
+      { "name": "netlify", "port": 8888, "purpose": "deployment" },
+      { "name": "github", "port": 3000, "purpose": "version control" },
+      { "name": "filesystem", "port": 8080, "purpose": "file operations" },
+      { "name": "memory", "port": 9000, "purpose": "state persistence" },
+      { "name": "sequential-thinking", "port": 9001, "purpose": "reasoning" },
+      { "name": "fetch", "port": 8081, "purpose": "http requests" }
+    ],
+    "skills": [
+      "airtop-browser", "github", "n8n-orchestrator", "keepassxc",
+      "vps-manager", "wallestars-devops", "supabase-client", "filesystem",
+      "memory-store", "sequential-thinking", "web-scraper", "email-handler",
+      "google-sheets", "notion-client", "calendar-sync", "pdf-processor",
+      "image-analyzer", "code-executor"
+    ],
+    "n8n_workflows": [
+      { "id": 1, "name": "Wallester V3", "nodes": 33, "status": "active" },
+      { "id": 2, "name": "Verified Owners", "nodes": 26, "status": "active" },
+      { "id": 3, "name": "Email Monitor", "nodes": 12, "status": "active" },
+      { "id": 4, "name": "GitHub Sync", "nodes": 8, "status": "active" },
+      { "id": 5, "name": "Memory Backup", "nodes": 15, "status": "paused" },
+      { "id": 6, "name": "Daily Report", "nodes": 18, "status": "active" },
+      { "id": 7, "name": "Credential Rotation", "nodes": 22, "status": "scheduled" },
+      { "id": 8, "name": "Health Check", "nodes": 6, "status": "active" }
+    ]
+  },
+  "instructions": {
+    "on_load": [
+      "Read KEEPASSXC_PASSWORD from .env",
+      "Initialize KeePassXC connection with password",
+      "Load all credential groups",
+      "Check n8n health at N8N_HOST:N8N_PORT",
+      "Verify MCP server connectivity",
+      "Report status to dashboard"
+    ],
+    "capabilities": [
+      "Full access to all credential groups via KeePassXC",
+      "Orchestrate n8n workflows",
+      "Manage all MCP server connections",
+      "Execute all 18 active skills",
+      "Primary decision-making agent"
+    ]
+  }
+}

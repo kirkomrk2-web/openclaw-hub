@@ -1,0 +1,65 @@
+{
+  "bot": {
+    "id": "scheduler",
+    "name": "Scheduler",
+    "role": "task-scheduler",
+    "status": "idle",
+    "next_execution": "15:00"
+  },
+  "env": {
+    "source": "../.env",
+    "required": [
+      "KEEPASSXC_PASSWORD",
+      "N8N_HOST",
+      "N8N_PORT",
+      "N8N_PROTOCOL"
+    ]
+  },
+  "keepassxc": {
+    "enabled": true,
+    "password_env": "KEEPASSXC_PASSWORD",
+    "credential_groups": [
+      {
+        "group": "API Keys",
+        "entries": ["N8N"],
+        "access": "read-only"
+      },
+      {
+        "group": "Tokens",
+        "entries": ["GitHub-PAT"],
+        "access": "read-only"
+      }
+    ]
+  },
+  "resources": {
+    "mcp_servers": [
+      { "name": "n8n", "port": 5678, "purpose": "workflow scheduling" },
+      { "name": "memory", "port": 9000, "purpose": "schedule persistence" }
+    ],
+    "skills": [
+      "n8n-orchestrator", "calendar-sync", "memory-store"
+    ],
+    "managed_workflows": [
+      { "id": 5, "name": "Memory Backup", "schedule": "daily 10:00" },
+      { "id": 6, "name": "Daily Report", "schedule": "daily 09:00" },
+      { "id": 7, "name": "Credential Rotation", "schedule": "weekly" },
+      { "id": 8, "name": "Health Check", "schedule": "every 30min" }
+    ]
+  },
+  "instructions": {
+    "on_load": [
+      "Read KEEPASSXC_PASSWORD from .env",
+      "Connect to KeePassXC for N8N API key",
+      "Check n8n availability at N8N_HOST:N8N_PORT",
+      "Load scheduled workflow definitions",
+      "Sync calendar events",
+      "Enter idle loop until next scheduled execution"
+    ],
+    "capabilities": [
+      "Read-only access to N8N and GitHub credentials",
+      "Trigger scheduled n8n workflows",
+      "Manage calendar sync",
+      "Maintain execution schedule in memory store"
+    ]
+  }
+}

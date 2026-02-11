@@ -1,0 +1,100 @@
+{
+  "bot": {
+    "id": "monitor",
+    "name": "Monitor",
+    "role": "service-monitor",
+    "status": "active",
+    "watching": 5
+  },
+  "env": {
+    "source": "../.env",
+    "required": [
+      "KEEPASSXC_PASSWORD",
+      "N8N_HOST",
+      "N8N_PORT",
+      "N8N_PROTOCOL"
+    ]
+  },
+  "keepassxc": {
+    "enabled": true,
+    "password_env": "KEEPASSXC_PASSWORD",
+    "credential_groups": [
+      {
+        "group": "API Keys",
+        "entries": ["N8N", "Airtop-PAID"],
+        "access": "read-only"
+      },
+      {
+        "group": "Tokens",
+        "entries": ["GitHub-PAT", "Netlify-Token"],
+        "access": "read-only"
+      },
+      {
+        "group": "Supabase",
+        "entries": ["API-Anon-Key"],
+        "access": "read-only"
+      }
+    ]
+  },
+  "resources": {
+    "mcp_servers": [
+      { "name": "n8n", "port": 5678, "purpose": "workflow health monitoring" },
+      { "name": "supabase", "port": 54321, "purpose": "database health monitoring" },
+      { "name": "github", "port": 3000, "purpose": "repo monitoring" },
+      { "name": "memory", "port": 9000, "purpose": "alert state persistence" },
+      { "name": "fetch", "port": 8081, "purpose": "endpoint health checks" }
+    ],
+    "skills": [
+      "n8n-orchestrator", "memory-store", "email-handler", "web-scraper"
+    ],
+    "watched_services": [
+      {
+        "service": "n8n",
+        "endpoint": "http://localhost:5678/healthz",
+        "check_interval": "30s",
+        "alert_on_failure": true
+      },
+      {
+        "service": "supabase",
+        "endpoint": "http://localhost:54321/rest/v1/",
+        "check_interval": "60s",
+        "alert_on_failure": true
+      },
+      {
+        "service": "netlify",
+        "endpoint": "http://localhost:8888",
+        "check_interval": "120s",
+        "alert_on_failure": false
+      },
+      {
+        "service": "memory-store",
+        "endpoint": "http://localhost:9000/health",
+        "check_interval": "60s",
+        "alert_on_failure": true
+      },
+      {
+        "service": "openclaw-hub",
+        "endpoint": "https://moltbot-showcase-1.preview.emergentagent.com",
+        "check_interval": "300s",
+        "alert_on_failure": true
+      }
+    ]
+  },
+  "instructions": {
+    "on_load": [
+      "Read KEEPASSXC_PASSWORD from .env",
+      "Connect to KeePassXC for monitoring credentials",
+      "Initialize health check loop for all 5 watched services",
+      "Load previous alert state from memory store",
+      "Start continuous monitoring cycle",
+      "Report initial status to dashboard"
+    ],
+    "capabilities": [
+      "Read-only access to monitoring-related credentials",
+      "Health check all watched services",
+      "Send alert notifications via email-handler",
+      "Log service status history in memory store",
+      "Trigger n8n Health Check workflow on failures"
+    ]
+  }
+}
