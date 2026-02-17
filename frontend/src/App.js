@@ -2,11 +2,13 @@ import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandNavbar } from '@/components/layout/CommandNavbar';
+import { AmbientOrbs } from '@/components/ui/AmbientOrbs';
 import DashboardPage from '@/pages/DashboardPage';
 import CalendarPage from '@/pages/CalendarPage';
 import ResourcesPage from '@/pages/ResourcesPage';
 import WatchtowerPage from '@/pages/WatchtowerPage';
 import PlaygroundPage from '@/pages/PlaygroundPage';
+import ConversationsPage from '@/pages/ConversationsPage';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -21,6 +23,9 @@ function App() {
   return (
     <HashRouter>
       <div className="relative min-h-screen bg-background">
+        {/* Ambient Floating Orbs */}
+        <AmbientOrbs />
+
         {/* Navbar */}
         <CommandNavbar />
 
@@ -34,6 +39,7 @@ function App() {
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/watchtower" element={<WatchtowerPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
+          <Route path="/conversations" element={<ConversationsPage />} />
         </Routes>
 
         {/* Toast Notifications */}

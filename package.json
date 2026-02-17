@@ -1,0 +1,17 @@
+{
+  "name": "openclaw-hub",
+  "version": "1.0.0",
+  "description": "OpenClaw Hub - Liquid Glass Dashboard with E2E Encrypted Conversations",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run frontend\"",
+    "server": "cd server && npm start",
+    "frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd server && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build"
+  },
+  "keywords": ["dashboard", "glassmorphism", "e2e-encryption", "react"],
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

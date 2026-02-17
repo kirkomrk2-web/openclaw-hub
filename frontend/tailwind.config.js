@@ -8,8 +8,8 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Space Grotesk', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                sans: ['SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'system-ui', 'sans-serif'],
+                mono: ['SF Mono', 'JetBrains Mono', 'Menlo', 'Monaco', 'monospace'],
             },
             borderRadius: {
                 lg: 'var(--radius)',

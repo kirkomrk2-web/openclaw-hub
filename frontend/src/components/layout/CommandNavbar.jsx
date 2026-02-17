@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Eye, FolderOpen, LayoutDashboard, Menu, Terminal, X } from 'lucide-react';
+import { Calendar, Eye, FolderOpen, LayoutDashboard, Menu, MessageSquareLock, Terminal, X } from 'lucide-react';
 
 const navLinks = [
   { name: 'Табло', href: '/', icon: LayoutDashboard },
+  { name: 'Conversations', href: '/conversations', icon: MessageSquareLock, badge: 'E2E' },
   { name: 'Календар', href: '/calendar', icon: Calendar },
   { name: 'Ресурси', href: '/resources', icon: FolderOpen },
   { name: 'Наблюдател', href: '/watchtower', icon: Eye },
@@ -47,6 +48,11 @@ export const CommandNavbar = () => {
                 >
                   <link.icon className="w-4 h-4" />
                   {link.name}
+                  {link.badge && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-md bg-primary/20 text-primary">
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -95,6 +101,11 @@ export const CommandNavbar = () => {
               >
                 <link.icon className="w-5 h-5" />
                 {link.name}
+                {link.badge && (
+                  <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-md bg-primary/20 text-primary">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             ))}
             <div className="flex items-center gap-2 px-4 py-3 border-t border-border/30 mt-2">
