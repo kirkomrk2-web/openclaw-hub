@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+  # PostgreSQL database with pgcrypto extension
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: phantomchat
+      POSTGRES_USER: phantom
+      POSTGRES_PASSWORD: phantom_secret
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U phantom -d phantomchat']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PhantomChat Backend (Fastify)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: phantomchat
+      DB_USER: phantom
+      DB_PASSWORD: phantom_secret
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # PhantomChat Frontend (Vite dev server)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '5173:5173'
+    environment:
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
