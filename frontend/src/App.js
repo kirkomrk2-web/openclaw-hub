@@ -7,6 +7,7 @@ import CalendarPage from '@/pages/CalendarPage';
 import ResourcesPage from '@/pages/ResourcesPage';
 import WatchtowerPage from '@/pages/WatchtowerPage';
 import PlaygroundPage from '@/pages/PlaygroundPage';
+import GoogleAIPage from '@/pages/GoogleAIPage';
 
 // Scroll to top on route change
 const ScrollToTop = () => {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/watchtower" element={<WatchtowerPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
+          <Route path="/google-ai" element={<GoogleAIPage />} />
         </Routes>
 
         {/* Toast Notifications */}

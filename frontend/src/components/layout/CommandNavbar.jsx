@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Eye, FolderOpen, LayoutDashboard, Menu, Terminal, X } from 'lucide-react';
+import { Calendar, Eye, FolderOpen, LayoutDashboard, Menu, Sparkles, Terminal, X } from 'lucide-react';
 
 const navLinks = [
   { name: 'Табло', href: '/', icon: LayoutDashboard },
@@ -9,6 +9,7 @@ const navLinks = [
   { name: 'Ресурси', href: '/resources', icon: FolderOpen },
   { name: 'Наблюдател', href: '/watchtower', icon: Eye },
   { name: 'Пясъчник', href: '/playground', icon: Terminal },
+  { name: 'Google AI', href: '/google-ai', icon: Sparkles },
 ];
 
 export const CommandNavbar = () => {
