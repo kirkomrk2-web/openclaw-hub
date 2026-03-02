@@ -8,6 +8,7 @@ import {
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import VPSHealthMonitor from '@/components/dashboard/VPSHealthMonitor';
 
 // Quick Stats Data
 const stats = [
@@ -175,6 +176,9 @@ export default function DashboardPage() {
             </GlassCard>
           </motion.div>
         </div>
+
+        {/* VPS Health Monitor */}
+        <VPSHealthMonitor />
 
         {/* Tailscale Mesh Network */}
         <motion.div
