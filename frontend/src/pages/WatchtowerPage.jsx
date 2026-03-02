@@ -1,31 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Eye, 
-    Plus, 
-    X, 
-    Play, 
-    Square, 
+import { Link } from 'react-router-dom';
+import {
+    Eye,
+    Plus,
+    X,
+    Play,
+    Square,
     Trash2,
     Clock,
     Globe,
-    User,
     AlertTriangle,
     CheckCircle2,
     Settings,
-    Bookmark
+    Bookmark,
+    ChevronDown
 } from 'lucide-react';
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-
-// Sessions Data
-const initialSessions = [
-    { id: 1, name: 'wallester-reg', status: 'running', url: 'wallester.com', duration: '00:45:32', profile: 'wallester' },
-    { id: 2, name: 'gmail-monitor', status: 'idle', url: 'mail.google.com', duration: '02:15:00', profile: 'gmail' },
-    { id: 3, name: 'failed-session', status: 'error', url: 'example.com', duration: '00:02:15', profile: 'default', error: 'Connection timeout' },
-];
+import useAppStore from '@/store/useAppStore';
 
 // Saved Profiles
 const savedProfiles = [
@@ -54,9 +49,19 @@ const statusColors = {
 };
 
 export default function WatchtowerPage() {
-    const [sessions, setSessions] = useState(initialSessions);
-    const [activeSession, setActiveSession] = useState(sessions[0]);
+    const sessions = useAppStore((s) => s.sessions);
+    const activeSessionId = useAppStore((s) => s.activeSessionId);
+    const setActiveSessionId = useAppStore((s) => s.setActiveSessionId);
+    const addSession = useAppStore((s) => s.addSession);
+    const stopSession = useAppStore((s) => s.stopSession);
+    const deleteSession = useAppStore((s) => s.deleteSession);
+
+    const activeSession = sessions.find(s => s.id === activeSessionId) || null;
+
     const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
+    const settingsRef = useRef(null);
     const [newSession, setNewSession] = useState({
         name: '',
         url: '',
@@ -65,12 +70,23 @@ export default function WatchtowerPage() {
         proxy: false,
     });
 
+    // Close settings dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (settingsRef.current && !settingsRef.current.contains(e.target)) {
+                setShowSettingsDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleCreateSession = () => {
         if (!newSession.name || !newSession.url) {
             toast.error('Моля попълнете всички полета');
             return;
         }
-        
+
         const session = {
             id: Date.now(),
             name: newSession.name,
@@ -79,27 +95,45 @@ export default function WatchtowerPage() {
             duration: '00:00:00',
             profile: newSession.profile,
         };
-        
-        setSessions([...sessions, session]);
-        setActiveSession(session);
+
+        addSession(session);
         setShowNewSessionModal(false);
         setNewSession({ name: '', url: '', profile: 'default', timeout: 30, proxy: false });
         toast.success('Сесията е създадена');
     };
 
     const handleStopSession = (session) => {
-        setSessions(sessions.map(s => 
-            s.id === session.id ? { ...s, status: 'idle' } : s
-        ));
+        stopSession(session.id);
         toast.info(`${session.name} е спряна`);
     };
 
     const handleDeleteSession = (session) => {
-        setSessions(sessions.filter(s => s.id !== session.id));
-        if (activeSession?.id === session.id) {
-            setActiveSession(sessions[0]);
+        setShowDeleteConfirm(session);
+    };
+
+    const confirmDeleteSession = () => {
+        if (showDeleteConfirm) {
+            deleteSession(showDeleteConfirm.id);
+            toast.success(`${showDeleteConfirm.name} е изтрита`);
+            setShowDeleteConfirm(null);
         }
-        toast.success(`${session.name} е изтрита`);
+    };
+
+    const handleSettingsAction = (action) => {
+        setShowSettingsDropdown(false);
+        switch (action) {
+            case 'clear':
+                toast.success('Логовете са изчистени');
+                break;
+            case 'export':
+                toast.success('Логовете са експортирани');
+                break;
+            case 'settings':
+                toast.info('Настройки на сесията');
+                break;
+            default:
+                break;
+        }
     };
 
     return (
@@ -112,7 +146,7 @@ export default function WatchtowerPage() {
                 {/* Breadcrumb & Credits */}
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
-                        <span className="text-primary">🦞 OpenClaw</span> / Наблюдател
+                        <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Наблюдател
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass-card">
                         <span className="text-xs text-muted-foreground">Credits:</span>
@@ -127,22 +161,22 @@ export default function WatchtowerPage() {
                             <GlassCardContent className="p-4">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-semibold text-foreground">Сесии</h3>
-                                    <Button 
-                                        size="sm" 
+                                    <Button
+                                        size="sm"
                                         onClick={() => setShowNewSessionModal(true)}
                                         className="bg-primary hover:bg-primary/90"
                                     >
                                         <Plus className="w-4 h-4" />
                                     </Button>
                                 </div>
-                                
+
                                 <div className="space-y-2">
                                     {sessions.map((session) => (
                                         <motion.button
                                             key={session.id}
-                                            onClick={() => setActiveSession(session)}
+                                            onClick={() => setActiveSessionId(session.id)}
                                             className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
-                                                activeSession?.id === session.id
+                                                activeSessionId === session.id
                                                     ? `${statusColors[session.status].border} ${statusColors[session.status].bg}`
                                                     : 'border-border/30 hover:border-primary/50'
                                             } ${session.status === 'error' ? 'animate-pulse' : ''}`}
@@ -201,9 +235,9 @@ export default function WatchtowerPage() {
                             {sessions.filter(s => s.status !== 'error').map((session) => (
                                 <button
                                     key={session.id}
-                                    onClick={() => setActiveSession(session)}
+                                    onClick={() => setActiveSessionId(session.id)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-all whitespace-nowrap ${
-                                        activeSession?.id === session.id
+                                        activeSessionId === session.id
                                             ? 'bg-primary/20 text-primary border-b-2 border-primary'
                                             : 'text-muted-foreground hover:text-foreground'
                                     }`}
@@ -218,8 +252,8 @@ export default function WatchtowerPage() {
 
                         {/* Live View Frame */}
                         <GlassCard className={`${
-                            activeSession?.status === 'error' 
-                                ? 'border-2 border-destructive animate-pulse' 
+                            activeSession?.status === 'error'
+                                ? 'border-2 border-destructive animate-pulse'
                                 : activeSession?.status === 'idle'
                                     ? 'border-2 border-warning'
                                     : ''
@@ -240,8 +274,8 @@ export default function WatchtowerPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {activeSession?.status === 'running' && (
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 variant="outline"
                                                 onClick={() => handleStopSession(activeSession)}
                                             >
@@ -250,8 +284,8 @@ export default function WatchtowerPage() {
                                             </Button>
                                         )}
                                         {activeSession && (
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 variant="ghost"
                                                 className="text-destructive"
                                                 onClick={() => handleDeleteSession(activeSession)}
@@ -263,9 +297,9 @@ export default function WatchtowerPage() {
                                 </div>
 
                                 {/* Iframe Placeholder */}
-                                <div 
+                                <div
                                     className="h-[400px] bg-secondary/10 flex items-center justify-center"
-                                    style={{ 
+                                    style={{
                                         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(108, 156, 255, 0.03) 50px, rgba(108, 156, 255, 0.03) 51px), repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(108, 156, 255, 0.03) 50px, rgba(108, 156, 255, 0.03) 51px)'
                                     }}
                                 >
@@ -293,10 +327,45 @@ export default function WatchtowerPage() {
                         {/* Session Log */}
                         <GlassCard>
                             <GlassCardContent className="p-4">
-                                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                                    <Settings className="w-4 h-4 text-primary" />
-                                    Session Log
-                                </h3>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                        <Settings className="w-4 h-4 text-primary" />
+                                        Session Log
+                                    </h3>
+                                    {/* Settings Dropdown */}
+                                    <div className="relative" ref={settingsRef}>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                                        >
+                                            <Settings className="w-4 h-4" />
+                                            <ChevronDown className="w-3 h-3 ml-1" />
+                                        </Button>
+                                        {showSettingsDropdown && (
+                                            <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-border/30 bg-background/95 backdrop-blur-xl shadow-lg z-50">
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-primary/10 rounded-t-lg"
+                                                    onClick={() => handleSettingsAction('clear')}
+                                                >
+                                                    Изчисти логове
+                                                </button>
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-primary/10"
+                                                    onClick={() => handleSettingsAction('export')}
+                                                >
+                                                    Експортирай логове
+                                                </button>
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-primary/10 rounded-b-lg"
+                                                    onClick={() => handleSettingsAction('settings')}
+                                                >
+                                                    Настройки
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                                 <div className="h-[200px] overflow-y-auto space-y-1 font-mono text-xs">
                                     {sessionLogs.map((log, index) => (
                                         <div
@@ -347,7 +416,7 @@ export default function WatchtowerPage() {
                                                 <X className="w-5 h-5" />
                                             </Button>
                                         </div>
-                                        
+
                                         <div className="space-y-4">
                                             <div>
                                                 <label className="text-sm text-muted-foreground mb-2 block">Име на сесията</label>
@@ -358,7 +427,7 @@ export default function WatchtowerPage() {
                                                     className="bg-secondary/30"
                                                 />
                                             </div>
-                                            
+
                                             <div>
                                                 <label className="text-sm text-muted-foreground mb-2 block">URL</label>
                                                 <Input
@@ -368,7 +437,7 @@ export default function WatchtowerPage() {
                                                     className="bg-secondary/30"
                                                 />
                                             </div>
-                                            
+
                                             <div>
                                                 <label className="text-sm text-muted-foreground mb-2 block">Профил</label>
                                                 <select
@@ -381,7 +450,7 @@ export default function WatchtowerPage() {
                                                     ))}
                                                 </select>
                                             </div>
-                                            
+
                                             <div>
                                                 <label className="text-sm text-muted-foreground mb-2 block">Timeout (секунди)</label>
                                                 <Input
@@ -391,7 +460,7 @@ export default function WatchtowerPage() {
                                                     className="bg-secondary/30"
                                                 />
                                             </div>
-                                            
+
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="checkbox"
@@ -402,14 +471,65 @@ export default function WatchtowerPage() {
                                                 />
                                                 <label htmlFor="proxy" className="text-sm text-foreground">Използвай Proxy</label>
                                             </div>
-                                            
-                                            <Button 
+
+                                            <Button
                                                 className="w-full bg-primary hover:bg-primary/90"
                                                 onClick={handleCreateSession}
                                             >
                                                 <Play className="w-4 h-4 mr-2" />
                                                 Стартирай Сесия
                                             </Button>
+                                        </div>
+                                    </GlassCardContent>
+                                </GlassCard>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Delete Confirmation Modal */}
+                <AnimatePresence>
+                    {showDeleteConfirm && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+                            onClick={() => setShowDeleteConfirm(null)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full max-w-sm"
+                            >
+                                <GlassCard>
+                                    <GlassCardContent className="p-6">
+                                        <div className="text-center">
+                                            <AlertTriangle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                                                Изтриване на сесия
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground mb-6">
+                                                Сигурни ли сте, че искате да изтриете <strong>{showDeleteConfirm.name}</strong>?
+                                            </p>
+                                            <div className="flex gap-3">
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1"
+                                                    onClick={() => setShowDeleteConfirm(null)}
+                                                >
+                                                    Отказ
+                                                </Button>
+                                                <Button
+                                                    className="flex-1 bg-destructive hover:bg-destructive/90"
+                                                    onClick={confirmDeleteSession}
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Изтрий
+                                                </Button>
+                                            </div>
                                         </div>
                                     </GlassCardContent>
                                 </GlassCard>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    Search, 
-    Folder, 
-    Key, 
-    Server, 
+import { Link } from 'react-router-dom';
+import {
+    Search,
+    Folder,
+    Key,
+    Server,
     Workflow,
     ChevronRight,
     ChevronDown,
@@ -13,7 +14,8 @@ import {
     FileText,
     CheckCircle2,
     XCircle,
-    RefreshCw
+    RefreshCw,
+    Copy
 } from 'lucide-react';
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
@@ -92,7 +94,7 @@ const workflows = [
     { id: 8, name: 'Health Check', nodes: 6, status: 'active', lastRun: '14:28' },
 ];
 
-const tabs = [
+const tabsList = [
     { id: 'skills', name: 'Skills', icon: Folder },
     { id: 'credentials', name: 'Credentials', icon: Key },
     { id: 'mcp', name: 'MCP Servers', icon: Server },
@@ -103,36 +105,67 @@ export default function ResourcesPage() {
     const [activeTab, setActiveTab] = useState('skills');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedFolders, setExpandedFolders] = useState(['API Keys']);
+    const [testingServer, setTestingServer] = useState(null);
 
     const toggleFolder = (folder) => {
-        setExpandedFolders(prev => 
-            prev.includes(folder) 
-                ? prev.filter(f => f !== folder) 
+        setExpandedFolders(prev =>
+            prev.includes(folder)
+                ? prev.filter(f => f !== folder)
                 : [...prev, folder]
         );
     };
 
-    const filteredSkills = skillsData.filter(skill => 
+    const filteredSkills = skillsData.filter(skill =>
         skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         skill.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleTestConnection = (server) => {
+        setTestingServer(server.name);
         toast.promise(
             new Promise(resolve => setTimeout(resolve, 1000)),
             {
                 loading: `Тестване на ${server.name}...`,
-                success: `${server.name} е достъпен`,
-                error: `${server.name} не отговаря`,
+                success: () => {
+                    setTestingServer(null);
+                    return `${server.name} е достъпен`;
+                },
+                error: () => {
+                    setTestingServer(null);
+                    return `${server.name} не отговаря`;
+                },
             }
         );
     };
 
-    const handleWorkflowAction = (workflow, action) => {
-        toast.success(`${action} за ${workflow.name}`, {
-            description: 'Действието е изпълнено',
-        });
+    const handleCopyCredential = (item) => {
+        navigator.clipboard.writeText(`***-${item}-***`);
+        toast.success(`${item} копиран в клипборда`);
     };
+
+    const handleWorkflowAction = (workflow, action) => {
+        switch (action) {
+            case 'Run':
+                toast.success(`Стартиране на ${workflow.name}`, {
+                    description: `Workflow с ${workflow.nodes} nodes е стартиран`,
+                });
+                break;
+            case 'Edit':
+                toast.info(`Редактиране на ${workflow.name}`, {
+                    description: 'Отваряне в n8n editor...',
+                });
+                break;
+            case 'Logs':
+                toast.info(`Логове за ${workflow.name}`, {
+                    description: `Последно изпълнение: ${workflow.lastRun}`,
+                });
+                break;
+            default:
+                break;
+        }
+    };
+
+    const skillsCount = filteredSkills.length;
 
     return (
         <motion.div
@@ -143,12 +176,12 @@ export default function ResourcesPage() {
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Breadcrumb */}
                 <div className="text-sm text-muted-foreground">
-                    <span className="text-primary">🦞 OpenClaw</span> / Ресурси
+                    <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Ресурси
                 </div>
 
                 {/* Tabs */}
                 <div className="flex flex-wrap gap-2">
-                    {tabs.map((tab) => (
+                    {tabsList.map((tab) => (
                         <Button
                             key={tab.id}
                             variant={activeTab === tab.id ? 'default' : 'outline'}
@@ -178,10 +211,10 @@ export default function ResourcesPage() {
                                         />
                                     </div>
                                     <span className="text-sm text-muted-foreground">
-                                        {filteredSkills.length} skills
+                                        {skillsCount} {skillsCount === 1 ? 'skill' : 'skills'}
                                     </span>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                     {filteredSkills.map((skill, index) => (
                                         <motion.div
@@ -190,8 +223,8 @@ export default function ResourcesPage() {
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: index * 0.02 }}
                                             className={`p-3 rounded-lg border transition-all cursor-pointer hover:border-primary/50 ${
-                                                skill.status === 'active' 
-                                                    ? 'bg-success/10 border-success/30' 
+                                                skill.status === 'active'
+                                                    ? 'bg-success/10 border-success/30'
                                                     : 'bg-secondary/20 border-border/30'
                                             }`}
                                         >
@@ -212,17 +245,17 @@ export default function ResourcesPage() {
                                             onClick={() => toggleFolder(folder.name)}
                                             className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-secondary/30 transition-colors"
                                         >
-                                            {expandedFolders.includes(folder.name) 
+                                            {expandedFolders.includes(folder.name)
                                                 ? <ChevronDown className="w-4 h-4 text-primary" />
                                                 : <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                             }
                                             <Folder className="w-4 h-4 text-warning" />
                                             <span className="font-medium text-foreground">{folder.name}</span>
                                             <span className="text-xs text-muted-foreground ml-auto">
-                                                {folder.items.length} items
+                                                {folder.items.length} {folder.items.length === 1 ? 'item' : 'items'}
                                             </span>
                                         </button>
-                                        
+
                                         {expandedFolders.includes(folder.name) && (
                                             <motion.div
                                                 initial={{ opacity: 0, height: 0 }}
@@ -232,11 +265,13 @@ export default function ResourcesPage() {
                                                 {folder.items.map((item) => (
                                                     <div
                                                         key={item}
-                                                        className="flex items-center gap-2 p-2 pl-4 rounded-lg hover:bg-secondary/20 cursor-pointer"
+                                                        className="flex items-center gap-2 p-2 pl-4 rounded-lg hover:bg-secondary/20 cursor-pointer group"
+                                                        onClick={() => handleCopyCredential(item)}
                                                     >
                                                         <Key className="w-3 h-3 text-accent" />
                                                         <span className="text-sm text-foreground">{item}</span>
-                                                        <span className="text-xs text-success ml-auto">●</span>
+                                                        <Copy className="w-3 h-3 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        <span className="text-xs text-success">●</span>
                                                     </div>
                                                 ))}
                                             </motion.div>
@@ -260,7 +295,7 @@ export default function ResourcesPage() {
                                     >
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="font-medium text-foreground">{server.name}</span>
-                                            {server.status === 'connected' 
+                                            {server.status === 'connected'
                                                 ? <CheckCircle2 className="w-4 h-4 text-success" />
                                                 : <XCircle className="w-4 h-4 text-destructive" />
                                             }
@@ -273,8 +308,9 @@ export default function ResourcesPage() {
                                             variant="outline"
                                             className="w-full"
                                             onClick={() => handleTestConnection(server)}
+                                            disabled={testingServer === server.name}
                                         >
-                                            <RefreshCw className="w-3 h-3 mr-2" />
+                                            <RefreshCw className={`w-3 h-3 mr-2 ${testingServer === server.name ? 'animate-spin' : ''}`} />
                                             Test Connection
                                         </Button>
                                     </div>
@@ -314,23 +350,26 @@ export default function ResourcesPage() {
                                                 <td className="p-3 text-muted-foreground">{workflow.lastRun}</td>
                                                 <td className="p-3 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="ghost"
+                                                            title="Run workflow"
                                                             onClick={() => handleWorkflowAction(workflow, 'Run')}
                                                         >
                                                             <Play className="w-3 h-3" />
                                                         </Button>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="ghost"
+                                                            title="Edit workflow"
                                                             onClick={() => handleWorkflowAction(workflow, 'Edit')}
                                                         >
                                                             <Edit className="w-3 h-3" />
                                                         </Button>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="ghost"
+                                                            title="View logs"
                                                             onClick={() => handleWorkflowAction(workflow, 'Logs')}
                                                         >
                                                             <FileText className="w-3 h-3" />

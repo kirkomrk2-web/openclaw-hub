@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-    Terminal, 
-    Globe, 
+import { Link } from 'react-router-dom';
+import {
+    Terminal,
+    Globe,
     Database,
     Send,
     Loader2,
     Play,
     Trash2,
-    Copy,
-    Check
+    Copy
 } from 'lucide-react';
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,7 @@ const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
 export default function PlaygroundPage() {
     const [activeTab, setActiveTab] = useState('terminal');
-    
+
     // Terminal State
     const [terminalHistory, setTerminalHistory] = useState([
         { type: 'system', content: 'OpenClaw Terminal v4.0.0\nВъведете "помощ" за списък с команди.\n─────────────────────────────────' }
@@ -122,16 +122,15 @@ export default function PlaygroundPage() {
     }, [terminalHistory]);
 
     // Terminal Functions
-    const handleTerminalSubmit = (e) => {
-        e.preventDefault();
-        if (!terminalInput.trim() || isProcessing) return;
+    const executeCommand = (command) => {
+        if (!command.trim() || isProcessing) return;
 
-        const command = terminalInput.toLowerCase().trim();
-        setTerminalHistory(prev => [...prev, { type: 'user', content: terminalInput }]);
+        const cmd = command.toLowerCase().trim();
+        setTerminalHistory(prev => [...prev, { type: 'user', content: command }]);
         setTerminalInput('');
         setIsProcessing(true);
 
-        if (command === 'изчисти') {
+        if (cmd === 'изчисти') {
             setTimeout(() => {
                 setTerminalHistory([
                     { type: 'system', content: 'OpenClaw Terminal v4.0.0\nВъведете "помощ" за списък с команди.\n─────────────────────────────────' }
@@ -142,10 +141,19 @@ export default function PlaygroundPage() {
         }
 
         setTimeout(() => {
-            const response = terminalResponses[command] || terminalResponses.default;
+            const response = terminalResponses[cmd] || terminalResponses.default;
             setTerminalHistory(prev => [...prev, { type: 'response', content: response }]);
             setIsProcessing(false);
         }, 500);
+    };
+
+    const handleTerminalSubmit = (e) => {
+        e.preventDefault();
+        executeCommand(terminalInput);
+    };
+
+    const handleQuickCommand = (cmd) => {
+        executeCommand(cmd);
     };
 
     // API Tester Functions
@@ -210,6 +218,11 @@ export default function PlaygroundPage() {
         }, 800);
     };
 
+    const handleSqlClear = () => {
+        setSqlQuery('');
+        setSqlResult(null);
+    };
+
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
         toast.success('Копирано в клипборда');
@@ -224,7 +237,7 @@ export default function PlaygroundPage() {
             <div className="max-w-6xl mx-auto space-y-6">
                 {/* Breadcrumb */}
                 <div className="text-sm text-muted-foreground">
-                    <span className="text-primary">🦞 OpenClaw</span> / Пясъчник
+                    <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Пясъчник
                 </div>
 
                 {/* Tabs */}
@@ -257,7 +270,7 @@ export default function PlaygroundPage() {
                             </div>
 
                             {/* Terminal Content */}
-                            <div 
+                            <div
                                 ref={terminalRef}
                                 className="h-[400px] overflow-y-auto p-4 font-mono text-sm bg-secondary/10"
                             >
@@ -307,7 +320,7 @@ export default function PlaygroundPage() {
                                 {['помощ', 'статус', 'агенти', 'n8n', 'supabase', 'airtop'].map((cmd) => (
                                     <button
                                         key={cmd}
-                                        onClick={() => setTerminalInput(cmd)}
+                                        onClick={() => handleQuickCommand(cmd)}
                                         className="px-2 py-1 text-xs font-mono rounded bg-secondary/30 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                     >
                                         {cmd}
@@ -325,7 +338,7 @@ export default function PlaygroundPage() {
                         <GlassCard>
                             <GlassCardContent className="p-4 space-y-4">
                                 <h3 className="font-semibold text-foreground">Request</h3>
-                                
+
                                 <div className="flex gap-2">
                                     <select
                                         value={apiMethod}
@@ -355,7 +368,7 @@ export default function PlaygroundPage() {
                                     </div>
                                 )}
 
-                                <Button 
+                                <Button
                                     className="w-full bg-primary"
                                     onClick={handleApiTest}
                                     disabled={apiLoading}
@@ -381,8 +394,8 @@ export default function PlaygroundPage() {
                                                 {apiResponse.status} {apiResponse.statusText}
                                             </span>
                                             <span className="text-xs text-muted-foreground">{apiResponse.time}</span>
-                                            <Button 
-                                                size="sm" 
+                                            <Button
+                                                size="sm"
                                                 variant="ghost"
                                                 onClick={() => copyToClipboard(JSON.stringify(apiResponse.data, null, 2))}
                                             >
@@ -391,7 +404,7 @@ export default function PlaygroundPage() {
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <div className="h-[300px] overflow-auto bg-secondary/10 rounded-lg p-4 font-mono text-sm">
                                     {apiResponse ? (
                                         <pre className="text-foreground whitespace-pre-wrap">
@@ -417,7 +430,7 @@ export default function PlaygroundPage() {
                                     <h3 className="font-semibold text-foreground">SQL Query</h3>
                                     <span className="text-xs text-muted-foreground">Supabase PostgreSQL</span>
                                 </div>
-                                
+
                                 <Textarea
                                     value={sqlQuery}
                                     onChange={(e) => setSqlQuery(e.target.value)}
@@ -426,7 +439,7 @@ export default function PlaygroundPage() {
                                 />
 
                                 <div className="flex gap-2">
-                                    <Button 
+                                    <Button
                                         className="bg-primary"
                                         onClick={handleSqlExecute}
                                         disabled={sqlLoading}
@@ -438,7 +451,7 @@ export default function PlaygroundPage() {
                                         )}
                                         Изпълни
                                     </Button>
-                                    <Button variant="outline" onClick={() => setSqlQuery('')}>
+                                    <Button variant="outline" onClick={handleSqlClear}>
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Изчисти
                                     </Button>
@@ -453,11 +466,11 @@ export default function PlaygroundPage() {
                                     <h3 className="font-semibold text-foreground">Резултати</h3>
                                     {sqlResult && (
                                         <span className="text-xs text-muted-foreground">
-                                            {sqlResult.rowCount} реда • {sqlResult.time}
+                                            {sqlResult.rowCount} {sqlResult.rowCount === 1 ? 'ред' : 'реда'} • {sqlResult.time}
                                         </span>
                                     )}
                                 </div>
-                                
+
                                 {sqlResult ? (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">

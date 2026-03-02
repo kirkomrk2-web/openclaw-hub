@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   CircleCheck, TriangleAlert, Activity, Bot, Cpu, Database,
   Globe, Key, Play, Search, Server, Wifi, Zap
@@ -29,14 +30,14 @@ const activities = [
   { time: '12:58', type: 'success', message: 'Memory maintenance completed', icon: Cpu },
 ];
 
-// Quick Actions
+// Quick Actions with navigation routes
 const quickActions = [
-  { label: 'Нов Task', icon: Play, color: 'primary' },
-  { label: 'Нова Airtop Сесия', icon: Globe, color: 'accent' },
-  { label: 'Run Workflow', icon: Zap, color: 'warning' },
-  { label: 'Search Skills', icon: Search, color: 'primary' },
-  { label: 'n8n Status', icon: Activity, color: 'success' },
-  { label: 'Get Credential', icon: Key, color: 'accent' },
+  { label: 'Нов Task', icon: Play, color: 'primary', route: '/playground' },
+  { label: 'Нова Airtop Сесия', icon: Globe, color: 'accent', route: '/watchtower' },
+  { label: 'Run Workflow', icon: Zap, color: 'warning', route: '/resources', tab: 'workflows' },
+  { label: 'Search Skills', icon: Search, color: 'primary', route: '/resources', tab: 'skills' },
+  { label: 'n8n Status', icon: Activity, color: 'success', route: '/resources', tab: 'workflows' },
+  { label: 'Get Credential', icon: Key, color: 'accent', route: '/resources', tab: 'credentials' },
 ];
 
 // Tailscale Mesh Nodes
@@ -62,10 +63,13 @@ const activityColors = {
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+
   const handleQuickAction = (action) => {
     toast.success(`${action.label} изпълнено`, {
       description: 'Действието е стартирано успешно',
     });
+    navigate(action.route);
   };
 
   return (
@@ -77,7 +81,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <div className="text-sm text-muted-foreground">
-          <span className="text-primary">🦞 OpenClaw</span> / Табло
+          <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Табло
         </div>
 
         {/* Stats Grid */}
