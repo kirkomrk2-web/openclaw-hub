@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, Edit } from 'lucide-react';
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import useAppStore from '@/store/useAppStore';
 
 const DAYS_BG = ['Пон', 'Вто', 'Сря', 'Чет', 'Пет', 'Съб', 'Нед'];
 const MONTHS_BG = [
@@ -20,35 +22,18 @@ const eventColors = {
   idea: '#A855F7',
 };
 
-const initialEvents = [
-  { id: 1, date: '2025-02-28', title: 'VPS Renewal', type: 'critical' },
-  { id: 2, date: '2025-02-07', title: 'Sprint 1 End', type: 'task' },
-  { id: 3, date: '2025-02-14', title: 'Sprint 2 End', type: 'task' },
-  { id: 4, date: '2025-02-21', title: 'Sprint 3 End', type: 'task' },
-  { id: 5, date: '2025-02-08', title: 'Memory Maintenance', type: 'auto' },
-  { id: 6, date: '2025-02-15', title: 'Credential Rotation', type: 'auto' },
-  { id: 7, date: '2025-02-22', title: 'Memory Maintenance', type: 'auto' },
-  { id: 8, date: '2025-02-10', title: 'Google Sheets Sync', type: 'task' },
-  { id: 9, date: '2025-02-12', title: 'Email Monitor Setup', type: 'task' },
-  { id: 10, date: '2025-02-14', title: 'Multi-Agent Review', type: 'meeting' },
-  { id: 11, date: '2025-03-02', title: 'Gemini Trial End', type: 'critical' },
-  { id: 12, date: '2025-02-18', title: 'API Integration', type: 'idea' },
-];
-
 export default function CalendarPage() {
+  const events = useAppStore((s) => s.events);
+  const addEvent = useAppStore((s) => s.addEvent);
+  const deleteEvent = useAppStore((s) => s.deleteEvent);
+
   const [currentDate, setCurrentDate] = useState(new Date(2025, 1, 1)); // February 2025
   const [view, setView] = useState('month');
-  const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem('openclaw-events');
-    return saved ? JSON.parse(saved) : initialEvents;
-  });
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [newEvent, setNewEvent] = useState({ title: '', type: 'task' });
-
-  useEffect(() => {
-    localStorage.setItem('openclaw-events', JSON.stringify(events));
-  }, [events]);
 
   const today = new Date();
 
@@ -104,8 +89,21 @@ export default function CalendarPage() {
   };
 
   const handleDayClick = (day) => {
+    const dayEvents = getEventsForDate(day.date);
     setSelectedDate(day.date);
-    setShowModal(true);
+    if (dayEvents.length > 0) {
+      setSelectedEvent(dayEvents);
+      setShowDetailModal(true);
+    } else {
+      setNewEvent({ title: '', type: 'task' });
+      setShowAddModal(true);
+    }
+  };
+
+  const handleEventClick = (e, event) => {
+    e.stopPropagation();
+    setSelectedEvent([event]);
+    setShowDetailModal(true);
   };
 
   const handleAddEvent = () => {
@@ -119,10 +117,28 @@ export default function CalendarPage() {
       title: newEvent.title,
       type: newEvent.type,
     };
-    setEvents([...events, event]);
+    addEvent(event);
     setNewEvent({ title: '', type: 'task' });
-    setShowModal(false);
+    setShowAddModal(false);
     toast.success('Събитието е добавено');
+  };
+
+  const handleDeleteEvent = (eventId) => {
+    deleteEvent(eventId);
+    const remaining = selectedEvent.filter(e => e.id !== eventId);
+    if (remaining.length === 0) {
+      setShowDetailModal(false);
+      setSelectedEvent(null);
+    } else {
+      setSelectedEvent(remaining);
+    }
+    toast.success('Събитието е изтрито');
+  };
+
+  const openAddFromDetail = () => {
+    setShowDetailModal(false);
+    setNewEvent({ title: '', type: 'task' });
+    setShowAddModal(true);
   };
 
   const days = getDaysInMonth(currentDate);
@@ -136,7 +152,7 @@ export default function CalendarPage() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <div className="text-sm text-muted-foreground">
-          <span className="text-primary">🦞 OpenClaw</span> / Календар
+          <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Календар
         </div>
 
         <GlassCard>
@@ -162,8 +178,12 @@ export default function CalendarPage() {
                     key={v}
                     variant={view === v ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setView(v)}
+                    onClick={() => {
+                      if (v === 'month') setView(v);
+                    }}
+                    disabled={v !== 'month'}
                     className={view === v ? 'bg-primary' : ''}
+                    title={v !== 'month' ? 'Скоро' : ''}
                   >
                     {v === 'day' ? 'Ден' : v === 'week' ? 'Седмица' : 'Месец'}
                   </Button>
@@ -206,7 +226,8 @@ export default function CalendarPage() {
                       {dayEvents.slice(0, 2).map((event) => (
                         <div
                           key={event.id}
-                          className="text-xs px-1 py-0.5 rounded truncate"
+                          onClick={(e) => handleEventClick(e, event)}
+                          className="text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80"
                           style={{
                             backgroundColor: eventColors[event.type] + '30',
                             color: eventColors[event.type],
@@ -243,13 +264,13 @@ export default function CalendarPage() {
 
         {/* Add Event Modal */}
         <AnimatePresence>
-          {showModal && (
+          {showAddModal && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowAddModal(false)}
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -265,7 +286,7 @@ export default function CalendarPage() {
                         <Plus className="w-5 h-5 text-primary" />
                         Добави Събитие
                       </h3>
-                      <Button variant="ghost" size="icon" onClick={() => setShowModal(false)}>
+                      <Button variant="ghost" size="icon" onClick={() => setShowAddModal(false)}>
                         <X className="w-5 h-5" />
                       </Button>
                     </div>
@@ -310,6 +331,83 @@ export default function CalendarPage() {
                         Добави
                       </Button>
                     </div>
+                  </GlassCardContent>
+                </GlassCard>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Event Detail Modal */}
+        <AnimatePresence>
+          {showDetailModal && selectedEvent && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+              onClick={() => { setShowDetailModal(false); setSelectedEvent(null); }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-md"
+              >
+                <GlassCard>
+                  <GlassCardContent className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <Edit className="w-5 h-5 text-primary" />
+                        {selectedDate?.toLocaleDateString('bg-BG')} — {selectedEvent.length === 1 ? '1 събитие' : `${selectedEvent.length} събития`}
+                      </h3>
+                      <Button variant="ghost" size="icon" onClick={() => { setShowDetailModal(false); setSelectedEvent(null); }}>
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3 mb-6">
+                      {selectedEvent.map((event) => (
+                        <div
+                          key={event.id}
+                          className="flex items-center justify-between p-3 rounded-lg border"
+                          style={{
+                            backgroundColor: eventColors[event.type] + '15',
+                            borderColor: eventColors[event.type] + '50',
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: eventColors[event.type] }}
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-foreground">{event.title}</div>
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {event.type === 'critical' ? 'Критично' : event.type === 'task' ? 'Задача' : event.type === 'meeting' ? 'Среща' : event.type === 'auto' ? 'Автоматично' : 'Идея'}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteEvent(event.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Button
+                      className="w-full bg-primary hover:bg-primary/90"
+                      onClick={openAddFromDetail}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Добави ново събитие
+                    </Button>
                   </GlassCardContent>
                 </GlassCard>
               </motion.div>
