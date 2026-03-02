@@ -37,5 +37,5 @@ coverage/
 # Frontend env files (never commit real secrets)
 frontend/.env
 frontend/.env.*
-**/.env
-**/.env.*
+
+!frontend/.env.example
