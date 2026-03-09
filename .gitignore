@@ -32,3 +32,10 @@ coverage/
 
 # Misc
 .cache/
+
+
+# Frontend env files (never commit real secrets)
+frontend/.env
+frontend/.env.*
+
+!frontend/.env.example
