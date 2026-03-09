@@ -271,7 +271,7 @@ const Typewriter = ({ text, speed = 40, className = '' }) => {
     let i = 0;
     const timer = setInterval(() => {
       if (i < text.length) {
-        setDisplayed(prev => prev + text[i]);
+        setDisplayed(prev => prev + (text[i] ?? ''));
         i++;
       } else {
         clearInterval(timer);
