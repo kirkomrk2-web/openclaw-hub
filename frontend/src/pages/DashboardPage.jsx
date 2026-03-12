@@ -8,6 +8,7 @@ import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import VPSHealthMonitor from '@/components/dashboard/VPSHealthMonitor';
+import Spline3DViewer from '@/components/dashboard/Spline3DViewer';
 
 // Quick Stats Data
 const stats = [
@@ -173,8 +174,18 @@ export default function DashboardPage() {
           </motion.div>
         </div>
 
-        {/* VPS Health Monitor */}
-        <VPSHealthMonitor />
+        {/* VPS Health Monitor + 3D Mascot Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <VPSHealthMonitor />
+          </div>
+          <div className="lg:col-span-1">
+            <Spline3DViewer
+              title="🦞 OpenClaw Bot"
+              height="400px"
+            />
+          </div>
+        </div>
 
         {/* Tailscale Mesh Network */}
         <motion.div
