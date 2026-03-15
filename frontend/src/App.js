@@ -8,11 +8,17 @@ import ResourcesPage from '@/pages/ResourcesPage';
 import WatchtowerPage from '@/pages/WatchtowerPage';
 import PlaygroundPage from '@/pages/PlaygroundPage';
 
-// Scroll to top on route change
+// Scroll to top on route change — instant on first load, smooth otherwise
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  const isFirstRender = React.useRef(true);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isFirstRender.current) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      isFirstRender.current = false;
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [pathname]);
   return null;
 };

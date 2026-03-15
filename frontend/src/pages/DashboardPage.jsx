@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   CircleCheck, TriangleAlert, Activity, Bot, Cpu, Database,
   Globe, Key, Play, Search, Server, Wifi, Zap
@@ -7,14 +8,7 @@ import {
 import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-
-// Quick Stats Data
-const stats = [
-  { icon: Bot, label: 'Агенти', value: '3 активни', status: 'online', emoji: '🤖' },
-  { icon: Zap, label: 'n8n', value: '11/100 active', status: 'healthy', emoji: '⚡' },
-  { icon: Database, label: 'Supabase', value: '17 таблици', status: 'connected', emoji: '💾' },
-  { icon: Globe, label: 'Airtop', value: '0 сесии', status: 'ready', emoji: '🌐' },
-];
+import { useAppStore } from '@/store/useAppStore';
 
 // Activity Feed Data
 const activities = [
@@ -28,14 +22,14 @@ const activities = [
   { time: '12:58', type: 'success', message: 'Memory maintenance completed', icon: Cpu },
 ];
 
-// Quick Actions
+// Quick Actions with navigation routes
 const quickActions = [
-  { label: 'Нов Task', icon: Play, color: 'primary' },
-  { label: 'Нова Airtop Сесия', icon: Globe, color: 'accent' },
-  { label: 'Run Workflow', icon: Zap, color: 'warning' },
-  { label: 'Search Skills', icon: Search, color: 'primary' },
-  { label: 'n8n Status', icon: Activity, color: 'success' },
-  { label: 'Get Credential', icon: Key, color: 'accent' },
+  { label: 'Нов Task', icon: Play, color: 'primary', route: '/playground' },
+  { label: 'Нова Airtop Сесия', icon: Globe, color: 'accent', route: '/watchtower' },
+  { label: 'Run Workflow', icon: Zap, color: 'warning', route: '/resources' },
+  { label: 'Search Skills', icon: Search, color: 'primary', route: '/resources' },
+  { label: 'n8n Status', icon: Activity, color: 'success', route: '/resources' },
+  { label: 'Get Credential', icon: Key, color: 'accent', route: '/resources' },
 ];
 
 // Tailscale Mesh Nodes
@@ -61,10 +55,27 @@ const activityColors = {
 };
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+  const sessions = useAppStore((state) => state.sessions);
+
+  // Compute live Airtop session count from store
+  const airtopSessions = sessions.filter((s) => s.status === 'running').length;
+
+  // Quick Stats Data — Airtop uses live data from store
+  const stats = [
+    { icon: Bot, label: 'Агенти', value: '3 активни', status: 'online', emoji: '🤖' },
+    { icon: Zap, label: 'n8n', value: '11/100 active', status: 'healthy', emoji: '⚡' },
+    { icon: Database, label: 'Supabase', value: '17 таблици', status: 'connected', emoji: '💾' },
+    { icon: Globe, label: 'Airtop', value: `${airtopSessions} сесии`, status: 'ready', emoji: '🌐' },
+  ];
+
   const handleQuickAction = (action) => {
     toast.success(`${action.label} изпълнено`, {
       description: 'Действието е стартирано успешно',
     });
+    if (action.route) {
+      navigate(action.route);
+    }
   };
 
   return (
@@ -76,7 +87,7 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <div className="text-sm text-muted-foreground">
-          <span className="text-primary">🦞 OpenClaw</span> / Табло
+          <Link to="/" className="text-primary hover:underline">🦞 OpenClaw</Link> / Табло
         </div>
 
         {/* Stats Grid */}

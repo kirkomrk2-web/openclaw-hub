@@ -19,13 +19,7 @@ import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-
-// Sessions Data
-const initialSessions = [
-    { id: 1, name: 'wallester-reg', status: 'running', url: 'wallester.com', duration: '00:45:32', profile: 'wallester' },
-    { id: 2, name: 'gmail-monitor', status: 'idle', url: 'mail.google.com', duration: '02:15:00', profile: 'gmail' },
-    { id: 3, name: 'failed-session', status: 'error', url: 'example.com', duration: '00:02:15', profile: 'default', error: 'Connection timeout' },
-];
+import { useAppStore } from '@/store/useAppStore';
 
 // Saved Profiles
 const savedProfiles = [
@@ -54,8 +48,16 @@ const statusColors = {
 };
 
 export default function WatchtowerPage() {
-    const [sessions, setSessions] = useState(initialSessions);
-    const [activeSession, setActiveSession] = useState(sessions[0]);
+    // P0-4: Use Zustand store for sessions — survives navigation
+    const sessions = useAppStore((state) => state.sessions);
+    const activeSessionId = useAppStore((state) => state.activeSessionId);
+    const addSession = useAppStore((state) => state.addSession);
+    const stopSession = useAppStore((state) => state.stopSession);
+    const deleteSession = useAppStore((state) => state.deleteSession);
+    const setActiveSessionId = useAppStore((state) => state.setActiveSessionId);
+
+    const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0] || null;
+
     const [showNewSessionModal, setShowNewSessionModal] = useState(false);
     const [newSession, setNewSession] = useState({
         name: '',
@@ -80,25 +82,19 @@ export default function WatchtowerPage() {
             profile: newSession.profile,
         };
         
-        setSessions([...sessions, session]);
-        setActiveSession(session);
+        addSession(session);
         setShowNewSessionModal(false);
         setNewSession({ name: '', url: '', profile: 'default', timeout: 30, proxy: false });
         toast.success('Сесията е създадена');
     };
 
     const handleStopSession = (session) => {
-        setSessions(sessions.map(s => 
-            s.id === session.id ? { ...s, status: 'idle' } : s
-        ));
+        stopSession(session.id);
         toast.info(`${session.name} е спряна`);
     };
 
     const handleDeleteSession = (session) => {
-        setSessions(sessions.filter(s => s.id !== session.id));
-        if (activeSession?.id === session.id) {
-            setActiveSession(sessions[0]);
-        }
+        deleteSession(session.id);
         toast.success(`${session.name} е изтрита`);
     };
 
@@ -140,7 +136,7 @@ export default function WatchtowerPage() {
                                     {sessions.map((session) => (
                                         <motion.button
                                             key={session.id}
-                                            onClick={() => setActiveSession(session)}
+                                            onClick={() => setActiveSessionId(session.id)}
                                             className={`w-full p-3 rounded-lg border-2 text-left transition-all ${
                                                 activeSession?.id === session.id
                                                     ? `${statusColors[session.status].border} ${statusColors[session.status].bg}`
@@ -201,7 +197,7 @@ export default function WatchtowerPage() {
                             {sessions.filter(s => s.status !== 'error').map((session) => (
                                 <button
                                     key={session.id}
-                                    onClick={() => setActiveSession(session)}
+                                    onClick={() => setActiveSessionId(session.id)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-all whitespace-nowrap ${
                                         activeSession?.id === session.id
                                             ? 'bg-primary/20 text-primary border-b-2 border-primary'
