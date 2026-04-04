@@ -1,0 +1,29 @@
+{
+  "name": "@openclaw-hub/connector",
+  "version": "1.0.0",
+  "description": "Hub-and-spoke connector framework for the OpenClaw / Wallestars platform ecosystem",
+  "type": "module",
+  "main": "registry.js",
+  "exports": {
+    ".": "./registry.js",
+    "./registry": "./registry.js",
+    "./health": "./health.js",
+    "./connectors": "./connectors/index.js",
+    "./api/status": "./api/status.js"
+  },
+  "scripts": {
+    "test": "node --test tests/registry.test.js tests/health.test.js tests/connectors.test.js tests/status.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "openclaw",
+    "wallestars",
+    "connector",
+    "plugin",
+    "registry",
+    "health-check"
+  ],
+  "license": "MIT"
+}
