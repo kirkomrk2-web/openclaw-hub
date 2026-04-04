@@ -5,7 +5,7 @@
  * ServiceRegistry and returns a unified status report.
  */
 
-/** @typedef {'online'|'degraded'|'offline'} HealthStatus */
+import { DEFAULT_TIMEOUT_MS, DEGRADED_LATENCY_MS } from "./connectors/constants.js";
 
 /**
  * @typedef {Object} ServiceHealth
@@ -26,9 +26,6 @@
  * @property {{ total: number, online: number, degraded: number, offline: number, avg_latency_ms: number, overall_status: string }} summary
  * @property {string} checked_at
  */
-
-const DEFAULT_TIMEOUT_MS = 8_000;
-const DEGRADED_LATENCY_MS = 3_000;
 
 /**
  * Ping a single service URL and return its health result.

@@ -7,6 +7,7 @@
  */
 
 import { BaseConnector } from "./base.js";
+import { DEFAULT_TIMEOUT_MS, DEGRADED_LATENCY_MS } from "./constants.js";
 
 export class SupabaseConnector extends BaseConnector {
   /**
@@ -45,7 +46,7 @@ export class SupabaseConnector extends BaseConnector {
     const start = Date.now();
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8_000);
+      const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
       const res = await this._fetch(url, {
         headers: {
           apikey: this.config.anonKey,
@@ -56,7 +57,7 @@ export class SupabaseConnector extends BaseConnector {
       clearTimeout(timer);
       const latency = Date.now() - start;
       return {
-        status: res.status < 500 ? (latency >= 3_000 ? "degraded" : "online") : "degraded",
+        status: res.status < 500 ? (latency >= DEGRADED_LATENCY_MS ? "degraded" : "online") : "degraded",
         latency_ms: latency,
         status_code: res.status,
       };
@@ -64,9 +65,9 @@ export class SupabaseConnector extends BaseConnector {
       const isTimeout = err instanceof Error && err.name === "AbortError";
       return {
         status: "offline",
-        latency_ms: isTimeout ? 8_000 : Date.now() - start,
+        latency_ms: isTimeout ? DEFAULT_TIMEOUT_MS : Date.now() - start,
         status_code: null,
-        error: isTimeout ? "Request timed out (8000ms)" : err.message,
+        error: isTimeout ? `Request timed out (${DEFAULT_TIMEOUT_MS}ms)` : err.message,
       };
     }
   }
