@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandNavbar } from '@/components/layout/CommandNavbar';
@@ -12,8 +12,11 @@ import GoogleAIPage from '@/pages/GoogleAIPage';
 // Scroll to top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  const isFirstLoad = useRef(true);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const behavior = isFirstLoad.current ? 'auto' : 'smooth';
+    window.scrollTo({ top: 0, behavior });
+    isFirstLoad.current = false;
   }, [pathname]);
   return null;
 };

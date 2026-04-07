@@ -9,13 +9,13 @@ import { GlassCard, GlassCardContent } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import VPSHealthMonitor from '@/components/dashboard/VPSHealthMonitor';
+import useAppStore from '@/store/useAppStore';
 
-// Quick Stats Data
-const stats = [
+// Quick Stats Data (static entries — Airtop is computed live in the component)
+const baseStats = [
   { icon: Bot, label: 'Агенти', value: '3 активни', status: 'online', emoji: '🤖' },
   { icon: Zap, label: 'n8n', value: '11/100 active', status: 'healthy', emoji: '⚡' },
   { icon: Database, label: 'Supabase', value: '17 таблици', status: 'connected', emoji: '💾' },
-  { icon: Globe, label: 'Airtop', value: '0 сесии', status: 'ready', emoji: '🌐' },
 ];
 
 // Activity Feed Data
@@ -64,6 +64,13 @@ const activityColors = {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const sessions = useAppStore((s) => s.sessions);
+  const runningSessions = sessions.filter((s) => s.status === 'running').length;
+  const airtopStatus = runningSessions > 0 ? 'online' : 'ready';
+  const stats = [
+    ...baseStats,
+    { icon: Globe, label: 'Airtop', value: `${runningSessions} сесии`, status: airtopStatus, emoji: '🌐' },
+  ];
 
   const handleQuickAction = (action) => {
     toast.success(`${action.label} изпълнено`, {
