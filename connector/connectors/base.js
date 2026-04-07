@@ -101,6 +101,9 @@ export class BaseConnector {
 
   /**
    * Return a redacted copy of config (strips secrets like api keys and tokens).
+   * Secret values are replaced with a masked hint showing only the last 4
+   * characters (e.g. "****cret") so the entry is identifiable but never
+   * exposes the full secret.
    * Override in subclasses to customise.
    *
    * @returns {Record<string, unknown>}
@@ -109,13 +112,21 @@ export class BaseConnector {
     const safe = {};
     const secretKeys = /key|token|secret|password|pass|credential|auth/i;
     for (const [k, v] of Object.entries(this.config)) {
-      safe[k] = secretKeys.test(k) ? "[REDACTED]" : v;
+      if (secretKeys.test(k)) {
+        safe[k] = typeof v === "string" && v.length > 4
+          ? `****${v.slice(-4)}`
+          : "[REDACTED]";
+      } else {
+        safe[k] = v;
+      }
     }
     return safe;
   }
 
   /**
    * Register this connector's service entry into a ServiceRegistry.
+   * Only the safe (masked) config is stored — raw secrets never enter the
+   * registry.
    *
    * @param {import('../registry.js').ServiceRegistry} registry
    */
@@ -125,7 +136,7 @@ export class BaseConnector {
       name: this.name,
       url: this.config.url ?? "",
       type: this.type,
-      config: this.config,
+      config: this._safeConfig(),
     });
   }
 }

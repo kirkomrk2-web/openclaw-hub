@@ -42,7 +42,7 @@ describe("BaseConnector", () => {
     await assert.rejects(() => c.ping(), /not implemented/);
   });
 
-  it("getInfo() redacts secret keys in config", () => {
+  it("getInfo() masks secret keys in config with last-4 hint", () => {
     class MyConnector extends BaseConnector {
       async connect() { this._setState("connected"); }
       async ping() { return { status: "online", latency_ms: 1, status_code: 200 }; }
@@ -51,11 +51,13 @@ describe("BaseConnector", () => {
       url: "https://my.com",
       apiKey: "super-secret",
       token: "another-secret",
+      shortKey: "abc",
       publicField: "visible",
     });
     const info = c.getInfo();
-    assert.equal(info.config.apiKey, "[REDACTED]");
-    assert.equal(info.config.token, "[REDACTED]");
+    assert.equal(info.config.apiKey, "****cret");
+    assert.equal(info.config.token, "****cret");
+    assert.equal(info.config.shortKey, "[REDACTED]");
     assert.equal(info.config.publicField, "visible");
   });
 
@@ -68,6 +70,29 @@ describe("BaseConnector", () => {
     const reg = new ServiceRegistry();
     c.registerWith(reg);
     assert.ok(reg.has("my"));
+  });
+
+  it("registerWith() stores masked config — no raw secrets in registry", () => {
+    class MyConnector extends BaseConnector {
+      async connect() {}
+      async ping() { return { status: "online", latency_ms: 1, status_code: 200 }; }
+    }
+    const rawSecret = "my-super-secret-api-key";
+    const c = new MyConnector("my", "My", "dev", {
+      url: "https://my.com",
+      apiKey: rawSecret,
+      token: "tok-abcd",
+      shortKey: "abc",
+    });
+    const reg = new ServiceRegistry();
+    c.registerWith(reg);
+    const entry = reg.get("my");
+    assert.ok(entry, "entry should exist in registry");
+    assert.notEqual(entry.config.apiKey, rawSecret, "raw apiKey must not be stored");
+    assert.notEqual(entry.config.token, "tok-abcd", "raw token must not be stored");
+    assert.equal(entry.config.apiKey, "****-key", "apiKey should show last-4 mask");
+    assert.equal(entry.config.token, "****abcd", "token should show last-4 mask");
+    assert.equal(entry.config.shortKey, "[REDACTED]", "short secrets (≤4 chars) must be fully redacted");
   });
 
   it("disconnect() sets state to disconnected", async () => {
